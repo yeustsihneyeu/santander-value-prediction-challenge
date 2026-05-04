@@ -6,6 +6,7 @@ __pycache__/
 
 # Virtual environments
 .venv/
+.santander/
 venv/
 env/
 ENV/
@@ -43,6 +44,7 @@ Thumbs.db
 artifacts/
 models/
 outputs/
-reports/
+reports/generated/
 submissions/
-
+data/processed_data.csv
+data/*.parquet
