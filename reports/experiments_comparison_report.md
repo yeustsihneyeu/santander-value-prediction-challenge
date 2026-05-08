@@ -1,0 +1,24 @@
+# Experiments Comparison Report
+
+This report compares the modeling experiments from notebooks `03`-`11`. Notebooks `01` and `02` are exploratory/preprocessing notebooks and are not included because they do not train a model or report RMSLE.
+
+Feature counts are shown as `before -> after` for the feature-processing step tested in the notebook. `RMSLE train` for notebooks `03`-`08` was reproduced from the saved notebook setup because those notebooks did not persist train RMSLE in their final outputs. CV and test metrics are taken from the notebook outputs/reports.
+
+| notebook | what is checked | features before -> after | model | hyperparameters | RMSLE CV | RMSLE train | RMSLE test |
+| --- | --- | ---: | --- | --- | ---: | ---: | ---: |
+| `03_baseline.ipynb` | Baseline model comparison on `log1p(target)`; selected LightGBM for held-out test evaluation | 4,731 -> 4,731 | `LGBMRegressor` | default LGBM: `n_estimators=100`, `learning_rate=0.1`, `num_leaves=31`, `max_depth=-1`, `min_child_samples=20`, `subsample=1.0`, `colsample_bytree=1.0`, `reg_alpha=0.0`, `reg_lambda=0.0` | 1.4719 | 0.7724 | 1.4821 |
+| `04_remove_near_constnat.ipynb` | Remove near-constant sparse features with zero share `>0.99` | 4,731 -> 2,669 | `LGBMRegressor` | default LGBM: `n_estimators=100`, `learning_rate=0.1`, `num_leaves=31`, `max_depth=-1`, `min_child_samples=20`, `subsample=1.0`, `colsample_bytree=1.0`, `reg_alpha=0.0`, `reg_lambda=0.0` | 1.4693 | 0.7717 | 1.4826 |
+| `05_sparsity_thresholds_lgbm.ipynb` | Search sparse zero-share thresholds; CV-selected threshold `0.9875` | 4,731 -> 2,482 | `LGBMRegressor` | `n_estimators=500`, `learning_rate=0.03`, `num_leaves=31`, `max_depth=8`, `min_child_samples=20`, `subsample=0.8`, `colsample_bytree=0.8`, `reg_alpha=0.05`, `reg_lambda=0.05`, `min_split_gain=0.0` | 1.4500 | 0.8764 | 1.4635 |
+| `06_add_features_lgbm.ipynb` | Add row-wise aggregate features after sparse filtering | 4,731 -> 2,490 | `LGBMRegressor` | `n_estimators=500`, `learning_rate=0.03`, `num_leaves=31`, `max_depth=8`, `min_child_samples=20`, `subsample=0.8`, `colsample_bytree=0.8`, `reg_alpha=0.05`, `reg_lambda=0.05`, `min_split_gain=0.0` | 1.3757 | 0.7593 | 1.3851 |
+| `07_feature_importance_top_lgbm.ipynb` | Keep top gain-importance features from sparse-filtered row-wise setup; CV-selected `top_k=250` | 2,490 -> 250 | `LGBMRegressor` | `n_estimators=500`, `learning_rate=0.03`, `num_leaves=31`, `max_depth=8`, `min_child_samples=20`, `subsample=0.8`, `colsample_bytree=0.8`, `reg_alpha=0.05`, `reg_lambda=0.05`, `min_split_gain=0.0` | 1.3313 | 0.7396 | 1.4079 |
+| `08_lgbm_tuning_param_per_time.ipynb` | Manual one-parameter-at-a-time LightGBM tuning on sparse-filtered row-wise setup | 4,731 -> 2,490 | `LGBMRegressor` | `n_estimators=500`, `learning_rate=0.01`, `num_leaves=31`, `max_depth=6`, `min_child_samples=10`, `subsample=0.8`, `colsample_bytree=1.0`, `reg_alpha=0.5`, `reg_lambda=0.0`, `min_split_gain=0.0` | 1.3571 | 1.0155 | 1.3776 |
+| `09_final_optuna_lgbm.ipynb` | Final Optuna tuning with sparse threshold `0.9875` plus row-wise aggregate features | 4,731 -> 2,490 | `LGBMRegressor` | final params: `n_estimators=499`, `learning_rate=0.0132345`, `num_leaves=60`, `max_depth=6`, `min_child_samples=20`, `subsample=0.6403`, `colsample_bytree=0.7926`, `reg_alpha=0.00287`, `reg_lambda=22.7752`, `min_split_gain=0.1747` | 1.3576 | 1.1052 | 1.3767 |
+| `10_pca_lgbm.ipynb` | PCA-only dimensionality reduction; CV-selected `n_components=50` | 4,731 -> 50 | `PCA` + `LGBMRegressor` | `n_estimators=700`, `learning_rate=0.01`, `num_leaves=31`, `max_depth=6`, `min_child_samples=40`, `subsample=0.75`, `colsample_bytree=0.75`, `reg_alpha=0.1`, `reg_lambda=5.0`, `min_split_gain=0.05` | 1.5471 | 1.0739 | 1.5283 |
+| `11_truncated_svd_lgbm.ipynb` | TruncatedSVD-only dimensionality reduction after sparse filtering; CV-selected `n_components=50` | 4,731 -> 50 | `TruncatedSVD` + `LGBMRegressor` | `n_estimators=700`, `learning_rate=0.01`, `num_leaves=31`, `max_depth=6`, `min_child_samples=40`, `subsample=0.75`, `colsample_bytree=0.75`, `reg_alpha=0.1`, `reg_lambda=5.0`, `min_split_gain=0.05` | 1.5258 | 1.0628 | 1.5066 |
+
+## Short Readout
+
+- Best held-out test RMSLE: notebook `09` with `1.3767`.
+- Best CV RMSLE: notebook `07` with `1.3313`, but its held-out test RMSLE degraded to `1.4079`.
+- Best practical feature setup: sparse threshold `0.9875` plus row-wise aggregate features.
+- PCA-only and SVD-only compression both underperform the sparse-filtered row-wise LightGBM setup.

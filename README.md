@@ -2,19 +2,20 @@
 
 Notebook-first ML project for the Santander Value Prediction regression task. The goal is to predict the target transaction value from a high-dimensional, sparse, mostly numerical feature set.
 
-The current best local experiment is a tuned `LightGBM` model trained on `log1p(target)` with sparse feature filtering and row-wise aggregate features.
+The current best local experiment is an Optuna-tuned `LightGBM` model trained on `log1p(target)` with sparse feature filtering and row-wise aggregate features.
 
 ## Current Best Result
 
-From `artifacts/final_optuna_lgbm/final_optuna_summary.json`:
+From `09_final_optuna_lgbm.ipynb`:
 
 | metric | value |
 | --- | ---: |
-| CV RMSLE mean | 1.3569 |
-| Holdout RMSLE | 1.3786 |
-| Holdout RMSE | 6,948,547.59 |
-| Holdout MAE | 3,904,504.43 |
-| Holdout R2 | 0.2435 |
+| CV RMSLE mean | 1.3576 |
+| Train RMSLE | 1.1052 |
+| Test RMSLE | 1.3767 |
+| Test RMSE | 7,072,245.79 |
+| Test MAE | 3,963,023.64 |
+| Test R2 | 0.2163 |
 
 Model setup:
 
@@ -22,9 +23,13 @@ Model setup:
 - Model: `LGBMRegressor`
 - Optimizer: `Optuna`
 - CV: 5-fold `KFold`
-- Holdout size: `0.33`
+- Test size: `0.33`
 - Sparse threshold: `0.9875`
+- Base features kept: `2,482`
+- Row-wise features added: `8`
 - Final feature count: `2,490`
+- Optuna trials: `50`
+- Final `n_estimators`: `499`
 
 ## Repository Structure
 
@@ -34,26 +39,20 @@ Model setup:
 ├── requirements.txt
 ├── data/
 │   ├── train.csv
-│   └── processed_data.csv        # generated locally, ignored by git
+│   └── processed_data.csv        # local processed dataset
 ├── notebooks/
 │   ├── 01_eda.ipynb
 │   ├── 01_eda_report.md
 │   ├── 02_base_preprocessing.ipynb
-│   ├── 02_base_preprocessing_report.md
 │   ├── 03_baseline.ipynb
-│   ├── 03_baseline_report.md
 │   ├── 04_remove_near_constnat.ipynb
-│   ├── 04_remove_near_constnat_report.md
-│   ├── 05_lgbm_tuning_param_per_time.ipynb
-│   ├── 05_lgbm_tuning_param_per_time_report.md
+│   ├── 05_sparsity_thresholds_lgbm.ipynb
 │   ├── 06_add_features_lgbm.ipynb
-│   ├── 06_add_features_lgbm_report.md
-│   ├── 07_optuna_lgbm_tuning.ipynb
-│   ├── 07_optuna_lgbm_tuning_report.md
-│   ├── 08_sparsity_thresholds_lgbm.ipynb
-│   ├── 08_sparsity_thresholds_lgbm_report.md
+│   ├── 07_feature_importance_top_lgbm.ipynb
+│   ├── 08_lgbm_tuning_param_per_time.ipynb
 │   ├── 09_final_optuna_lgbm.ipynb
-│   └── 09_final_optuna_lgbm_report.md
+│   ├── 10_pca_lgbm.ipynb
+│   └── 11_truncated_svd_lgbm.ipynb
 ├── src/
 │   ├── features.py
 │   ├── loader.py
@@ -61,8 +60,8 @@ Model setup:
 │   ├── modeling.py
 │   └── preprocessing.py
 ├── reports/
+│   ├── experiments_comparison_report.md
 │   └── final_experiment_report.md
-└── artifacts/                    # generated locally, ignored by git
 ```
 
 ## Notebook Flow
@@ -70,18 +69,23 @@ Model setup:
 Run notebooks in this order when rebuilding the experiment from scratch:
 
 1. `01_eda.ipynb` - exploratory analysis and dataset diagnostics.
-2. `02_base_preprocessing.ipynb` - remove `ID` and duplicate feature columns, then write `data/processed_data.csv`.
+2. `02_base_preprocessing.ipynb` - remove `ID` and duplicate feature columns.
 3. `03_baseline.ipynb` - baseline model comparison on `log1p(target)`.
 4. `04_remove_near_constnat.ipynb` - test near-constant sparse feature removal.
-5. `05_lgbm_tuning_param_per_time.ipynb` - controlled LightGBM parameter sweeps.
+5. `05_sparsity_thresholds_lgbm.ipynb` - compare sparse feature thresholds.
 6. `06_add_features_lgbm.ipynb` - add row-wise aggregate features.
-7. `07_optuna_lgbm_tuning.ipynb` - Optuna tuning for LightGBM.
-8. `08_sparsity_thresholds_lgbm.ipynb` - compare sparse feature thresholds.
-9. `09_final_optuna_lgbm.ipynb` - final Optuna run using the selected sparse threshold.
+7. `07_feature_importance_top_lgbm.ipynb` - compare top-k feature sets selected by LightGBM importance.
+8. `08_lgbm_tuning_param_per_time.ipynb` - controlled LightGBM parameter sweeps.
+9. `09_final_optuna_lgbm.ipynb` - final Optuna run using sparse filtering plus row-wise features.
+10. `10_pca_lgbm.ipynb` - test whether PCA components can replace the original processed feature set.
+11. `11_truncated_svd_lgbm.ipynb` - test whether sparse-friendly TruncatedSVD components can replace the filtered feature set.
 
-Each notebook also has a short `*_report.md` file. These reports explain what was done and what result was received.
+Most notebook reports are embedded as final markdown cells. The EDA report is also kept as `notebooks/01_eda_report.md`.
 
-The final project summary is in `reports/final_experiment_report.md`.
+Final reports:
+
+- `reports/final_experiment_report.md` - short narrative summary of every notebook and final conclusion.
+- `reports/experiments_comparison_report.md` - detailed comparison table with features, model setup, hyperparameters, and RMSLE metrics.
 
 ## Setup
 
@@ -92,16 +96,11 @@ pip install -r requirements.txt
 python -m ipykernel install --user --name santander
 ```
 
-## Data And Artifacts
+## Data
 
-`data/train.csv` is the raw training dataset. `data/processed_data.csv` is generated by `02_base_preprocessing.ipynb` and is intentionally ignored by git.
+`data/train.csv` is the raw training dataset. `data/processed_data.csv` is the processed local dataset used by the modeling notebooks.
 
-Experiment outputs are written under `artifacts/` and are also ignored by git. The most important generated files are:
-
-- `artifacts/baseline/baseline_summary.json`
-- `artifacts/rowwise_features_lgbm/rowwise_summary.json`
-- `artifacts/sparsity_thresholds_rowwise_lgbm/sparsity_threshold_results.csv`
-- `artifacts/final_optuna_lgbm/final_optuna_summary.json`
+Notebook results are displayed in memory as tables, metrics, and final `summary` dictionaries.
 
 ## Current Findings
 
@@ -110,11 +109,7 @@ Experiment outputs are written under `artifacts/` and are also ignored by git. T
 - Many features are sparse and dominated by zeros.
 - Removing duplicate features and filtering highly sparse features improves the LightGBM setup.
 - Row-wise aggregate features add useful signal.
-- Final model selection should rely primarily on CV RMSLE; holdout RMSLE is a sanity check.
+- Feature-importance top-k selection improved CV RMSLE but worsened held-out test RMSLE.
+- PCA-only and TruncatedSVD-only compression lose too much sparse target-relevant signal.
+- Final model selection should rely primarily on CV RMSLE; held-out test RMSLE is a sanity check.
 
-## Next Improvements
-
-- Add a reproducible training CLI for the final model.
-- Add tests for preprocessing and feature generation.
-- Pin dependency versions in `requirements.txt`.
-- Add an inference/submission pipeline for test data.
