@@ -52,7 +52,8 @@ Model setup:
 │   ├── 08_lgbm_tuning_param_per_time.ipynb
 │   ├── 09_final_optuna_lgbm.ipynb
 │   ├── 10_pca_lgbm.ipynb
-│   └── 11_truncated_svd_lgbm.ipynb
+│   ├── 11_truncated_svd_lgbm.ipynb
+│   └── 12_umap_lgbm.ipynb
 ├── src/
 │   ├── features.py
 │   ├── loader.py
@@ -79,6 +80,7 @@ Run notebooks in this order when rebuilding the experiment from scratch:
 9. `09_final_optuna_lgbm.ipynb` - final Optuna run using sparse filtering plus row-wise features.
 10. `10_pca_lgbm.ipynb` - test whether PCA components can replace the original processed feature set.
 11. `11_truncated_svd_lgbm.ipynb` - test whether sparse-friendly TruncatedSVD components can replace the filtered feature set.
+12. `12_umap_lgbm.ipynb` - test whether non-linear UMAP components can replace the filtered feature set.
 
 Most notebook reports are embedded as final markdown cells. The EDA report is also kept as `notebooks/01_eda_report.md`.
 
@@ -112,4 +114,3 @@ Notebook results are displayed in memory as tables, metrics, and final `summary`
 - Feature-importance top-k selection improved CV RMSLE but worsened held-out test RMSLE.
 - PCA-only and TruncatedSVD-only compression lose too much sparse target-relevant signal.
 - Final model selection should rely primarily on CV RMSLE; held-out test RMSLE is a sanity check.
-

@@ -1,6 +1,6 @@
 # Experiments Comparison Report
 
-This report compares the modeling experiments from notebooks `03`-`11`. Notebooks `01` and `02` are exploratory/preprocessing notebooks and are not included because they do not train a model or report RMSLE.
+This report compares the modeling experiments from notebooks `03`-`12`. Notebooks `01` and `02` are exploratory/preprocessing notebooks and are not included because they do not train a model or report RMSLE.
 
 Feature counts are shown as `before -> after` for the feature-processing step tested in the notebook. `RMSLE train` for notebooks `03`-`08` was reproduced from the saved notebook setup because those notebooks did not persist train RMSLE in their final outputs. CV and test metrics are taken from the notebook outputs/reports.
 
@@ -15,10 +15,11 @@ Feature counts are shown as `before -> after` for the feature-processing step te
 | `09_final_optuna_lgbm.ipynb` | Final Optuna tuning with sparse threshold `0.9875` plus row-wise aggregate features | 4,731 -> 2,490 | `LGBMRegressor` | final params: `n_estimators=499`, `learning_rate=0.0132345`, `num_leaves=60`, `max_depth=6`, `min_child_samples=20`, `subsample=0.6403`, `colsample_bytree=0.7926`, `reg_alpha=0.00287`, `reg_lambda=22.7752`, `min_split_gain=0.1747` | 1.3576 | 1.1052 | 1.3767 |
 | `10_pca_lgbm.ipynb` | PCA-only dimensionality reduction; CV-selected `n_components=50` | 4,731 -> 50 | `PCA` + `LGBMRegressor` | `n_estimators=700`, `learning_rate=0.01`, `num_leaves=31`, `max_depth=6`, `min_child_samples=40`, `subsample=0.75`, `colsample_bytree=0.75`, `reg_alpha=0.1`, `reg_lambda=5.0`, `min_split_gain=0.05` | 1.5471 | 1.0739 | 1.5283 |
 | `11_truncated_svd_lgbm.ipynb` | TruncatedSVD-only dimensionality reduction after sparse filtering; CV-selected `n_components=50` | 4,731 -> 50 | `TruncatedSVD` + `LGBMRegressor` | `n_estimators=700`, `learning_rate=0.01`, `num_leaves=31`, `max_depth=6`, `min_child_samples=40`, `subsample=0.75`, `colsample_bytree=0.75`, `reg_alpha=0.1`, `reg_lambda=5.0`, `min_split_gain=0.05` | 1.5258 | 1.0628 | 1.5066 |
+| `12_umap_lgbm.ipynb` | UMAP-only dimensionality reduction after sparse filtering; CV-selected `n_components=10`; separate `n_components=2` visualization | 4,731 -> 10 | `UMAP` + `LGBMRegressor` | UMAP: `n_neighbors=15`, `min_dist=0.1`, `metric=euclidean`; LGBM: `n_estimators=700`, `learning_rate=0.01`, `num_leaves=31`, `max_depth=6`, `min_child_samples=40`, `subsample=0.75`, `colsample_bytree=0.75`, `reg_alpha=0.1`, `reg_lambda=5.0`, `min_split_gain=0.05` | 1.6972 | 1.4034 | 1.6616 |
 
 ## Short Readout
 
 - Best held-out test RMSLE: notebook `09` with `1.3767`.
 - Best CV RMSLE: notebook `07` with `1.3313`, but its held-out test RMSLE degraded to `1.4079`.
 - Best practical feature setup: sparse threshold `0.9875` plus row-wise aggregate features.
-- PCA-only and SVD-only compression both underperform the sparse-filtered row-wise LightGBM setup.
+- PCA-only, SVD-only, and UMAP-only compression all underperform the sparse-filtered row-wise LightGBM setup.

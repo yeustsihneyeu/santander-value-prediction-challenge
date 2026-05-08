@@ -21,6 +21,7 @@ The dataset is challenging because it has only `4,459` rows, thousands of anonym
 | `09_final_optuna_lgbm.ipynb` | Ran a 50-trial Optuna search on the selected sparse-filtered row-wise setup with early stopping. | To search parameter interactions more broadly than manual one-parameter tuning. | Best current held-out RMSLE: CV RMSLE `1.3576`, train RMSLE `1.1052`, test RMSLE `1.3767`. The gain over notebook `08` is small but it is the best test RMSLE in the current run. |
 | `10_pca_lgbm.ipynb` | Replaced the original processed feature set with PCA components only and trained LightGBM. | To test whether dense linear compression can reduce noise and dimensionality. | Best PCA size was `50` components. CV RMSLE `1.5471`, train RMSLE `1.0739`, test RMSLE `1.5283`; PCA-only is worse than the baseline and should not be used. |
 | `11_truncated_svd_lgbm.ipynb` | Applied sparse filtering, then replaced the filtered features with TruncatedSVD components only and trained LightGBM. | TruncatedSVD works without centering and is better suited than PCA for sparse matrices, so it was tested as a sparse-friendly compression method. | Best SVD size was `50` components. CV RMSLE `1.5258`, train RMSLE `1.0628`, test RMSLE `1.5066`; SVD-only beats PCA-only but is still worse than original sparse-filtered row-wise features. |
+| `12_umap_lgbm.ipynb` | Applied sparse filtering, then replaced the filtered features with UMAP components only; also added a 2D UMAP visualization subexperiment. | UMAP is non-linear, so it was tested to see whether local neighborhood structure captures target signal better than PCA/SVD. The 2D plot checks whether `log1p(target)` forms visible structure in the embedding. | Best UMAP size was `10` components. CV RMSLE `1.6972`, train RMSLE `1.4034`, test RMSLE `1.6616`; UMAP-only is the weakest compression experiment and should not be used as a replacement feature set. |
 
 ## Experiment Comparison
 
@@ -35,6 +36,7 @@ The dataset is challenging because it has only `4,459` rows, thousands of anonym
 | `09` | Optuna tuned sparse row-wise setup | 4,731 -> 2,490 | `LGBMRegressor` | 1.3576 | 1.1052 | 1.3767 | best test RMSLE |
 | `10` | PCA-only components | 4,731 -> 50 | `PCA` + `LGBMRegressor` | 1.5471 | 1.0739 | 1.5283 | worse than baseline |
 | `11` | sparse filter plus SVD-only components | 4,731 -> 50 | `TruncatedSVD` + `LGBMRegressor` | 1.5258 | 1.0628 | 1.5066 | better than PCA-only, still weak |
+| `12` | sparse filter plus UMAP-only components | 4,731 -> 10 | `UMAP` + `LGBMRegressor` | 1.6972 | 1.4034 | 1.6616 | weakest compression result |
 
 ## What Helped
 
@@ -50,7 +52,7 @@ Near-constant filtering with a fixed `0.99` threshold gave only a tiny CV improv
 
 Top-k feature-importance selection looked strong in CV but hurt held-out test RMSLE. It likely removed useful lower-ranked features or overfit to the validation folds.
 
-PCA-only and SVD-only dimensionality reduction lost too much target-relevant sparse signal. SVD was better than PCA, but both were worse than the sparse-filtered row-wise LightGBM setup.
+PCA-only, SVD-only, and UMAP-only dimensionality reduction lost too much target-relevant sparse signal. SVD was the best compression-only option, PCA was weaker, and UMAP was weakest. All three were worse than the sparse-filtered row-wise LightGBM setup.
 
 ## Best Current Model
 
